@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Activity — AI Literacy for Faculty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
+</head>
+<body class="fx embed">
+  <div class="embed-shell">
+    <div style="width:100%;max-width:760px">
+      <div id="mount"></div>
+      <div class="row between" style="margin-top:14px;padding:0 6px">
+        <span class="ai-disclosure" style="font-size:.72rem;padding:.35em .7em">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z" fill="currentColor"/></svg>
+          Built with AI · curated by Marc Watkins
+        </span>
+        <a class="btn btn-sm btn-ghost no-print" id="summaryLink" href="summary.html" target="_blank" rel="noopener">My summary →</a>
+      </div>
+    </div>
+  </div>
+
+<script src="assets/config.js"></script>
+<script src="assets/cloud.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var A = window.AILit;
+  var params = new URLSearchParams(location.search);
+  var id = params.get("id");
+  window.AILIT_SESSION = params.get("session") || "";
+  var mount = document.getElementById("mount");
+
+  if (window.AILIT_SESSION && window.AILitCloud && window.AILitCloud.enabled) {
+    var sl = document.getElementById("summaryLink");
+    sl.parentNode.insertBefore(
+      A.el("span", { class: "badge", style: "border-color:var(--c-teal);color:var(--c-cyan)",
+        html: '<span style="width:7px;height:7px;border-radius:50%;background:var(--c-teal);display:inline-block"></span> Live · ' + A.esc(window.AILIT_SESSION) }),
+      sl);
+  }
+
+  // Optional: a full config can be passed inline (base64 JSON) for portability
+  var inline = params.get("cfg");
+  if (inline) {
+    try { A.store.saveConfig(JSON.parse(decodeURIComponent(escape(atob(inline))))); } catch (e) {}
+  }
+
+  var activity = id ? A.getActivity(id) : null;
+  if (!activity) {
+    var cfg = A.store.getConfig();
+    var opts = cfg.activities.map(function (a) {
+      return '<a class="btn" style="width:100%;justify-content:flex-start;margin-bottom:8px" href="activity.html?id=' + a.id + '">' + A.esc(a.title) + ' <span class="muted" style="margin-left:auto">' + a.type + '</span></a>';
+    }).join("");
+    mount.innerHTML = '<div class="card card-glow"><div class="eyebrow">Pick an activity</div>' +
+      '<h2 class="gradient-text">No activity selected</h2>' +
+      '<p class="lead">Add <code>?id=ACTIVITY_ID</code> to the URL, or choose one:</p>' + opts +
+      '<p class="muted" style="font-size:.85rem;margin-top:10px">Build & edit activities in <a href="index.html">the toolkit hub</a>.</p></div>';
+    return;
+  }
+  A.renderActivity(mount, activity);
+})();
+</script>
+</body>
+</html>

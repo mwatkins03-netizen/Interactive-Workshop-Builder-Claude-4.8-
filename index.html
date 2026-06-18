@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Literacy Activity Toolkit — Marc Watkins</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
+</head>
+<body class="fx">
+  <div class="wrap" style="padding-top:46px">
+
+    <!-- Hero -->
+    <header style="margin-bottom:34px">
+      <div class="eyebrow">Interactive toolkit · embed in PowerPoint &amp; Google Slides</div>
+      <h1 class="gradient-text" id="hTitle">AI Literacy for Faculty</h1>
+      <p class="lead" id="hSub" style="max-width:680px"></p>
+      <div class="row" style="margin-top:14px">
+        <button class="btn btn-primary" id="btnAdd">+ New activity</button>
+        <a class="btn" href="summary.html" target="_blank" rel="noopener">Preview attendee summary</a>
+        <a class="btn" href="qr.html" target="_blank" rel="noopener">QR sheet</a>
+        <button class="btn btn-ghost" id="btnSettings">Workshop details</button>
+      </div>
+    </header>
+
+    <!-- Live session -->
+    <div class="card card-glow" style="margin-bottom:24px">
+      <div class="eyebrow">Live results · optional</div>
+      <h2 style="font-size:1.3rem;margin:.2em 0">Run a live session</h2>
+      <p class="muted" style="font-size:.9rem;max-width:600px;margin:.2em 0 0">
+        Turn on a session code to gather responses from the whole room in real time. While a code is set,
+        every activity's link &amp; embed carries it, and you can open the live results view on the projector.
+        Leave it blank to keep everything per-attendee (offline) only.
+      </p>
+      <div class="row" style="margin-top:14px;align-items:flex-end">
+        <label class="field" style="margin:0">
+          <span>Session code</span>
+          <input type="text" id="sessCode" placeholder="e.g. FALL26" style="max-width:200px;text-transform:uppercase">
+        </label>
+        <button class="btn btn-sm" id="sessNew">New code</button>
+        <button class="btn btn-sm btn-ghost" id="sessClear">Clear</button>
+        <a class="btn btn-sm btn-primary" id="sessResults" target="_blank" rel="noopener">Open live results →</a>
+        <span class="badge" id="sessStatus"></span>
+      </div>
+    </div>
+
+    <!-- Activity list -->
+    <div class="grid" id="list" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>
+
+    <!-- Config management -->
+    <div class="card" style="margin-top:34px">
+      <div class="row between">
+        <div>
+          <div class="eyebrow">Save &amp; share your setup</div>
+          <h2 style="font-size:1.3rem;margin:0">Configuration</h2>
+          <p class="muted" style="margin:.3em 0 0;font-size:.9rem;max-width:560px">
+            Your edits are saved automatically in this browser. Export a <code>config.json</code> to back it up
+            or publish your edits to your GitHub Pages site (replace <code>assets/config.js</code>).
+          </p>
+        </div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn btn-sm" id="btnExport">⬇ Export config.json</button>
+        <button class="btn btn-sm" id="btnExportJs">⬇ Export config.js</button>
+        <label class="btn btn-sm" style="cursor:pointer">⬆ Import config<input type="file" id="fileImport" accept=".json,.js" hidden></label>
+        <button class="btn btn-sm btn-danger" id="btnReset">↺ Reset to defaults</button>
+      </div>
+    </div>
+
+    <!-- How to embed -->
+    <div class="card" style="margin-top:22px">
+      <div class="eyebrow">How to embed</div>
+      <h2 style="font-size:1.3rem">Drop an activity into your slides</h2>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+        <div class="panel">
+          <strong>Google Slides</strong>
+          <p class="muted" style="font-size:.9rem">Slides has no native web embed. Use an add-on that embeds a URL
+          (e.g. an "embed iframe / web page" add-on), or add a button/image linked to the activity URL that opens full-screen during presenting.</p>
+        </div>
+        <div class="panel">
+          <strong>PowerPoint</strong>
+          <p class="muted" style="font-size:.9rem">Insert → <em>Add-ins</em> → a "Web Viewer"/iframe add-in, paste the activity URL.
+          Or Insert → Link on a shape to open the activity in the browser while presenting.</p>
+        </div>
+        <div class="panel">
+          <strong>Live / web</strong>
+          <p class="muted" style="font-size:.9rem">Open the activity URL directly in a browser tab and present full-screen.
+          Attendees scan a QR code (generate one from the URL) to respond on their own devices.</p>
+        </div>
+      </div>
+      <p class="muted" style="font-size:.85rem">Each activity's <strong>Embed</strong> button gives you a ready-to-paste link, iframe snippet, and QR link.</p>
+    </div>
+
+    <footer class="site-footer">
+      <div class="attribution">
+        <div>Created by <strong>Marc Watkins</strong> · AI Literacy for Faculty</div>
+        <div class="ai-disclosure">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z" fill="currentColor"/></svg>
+          <span><strong>AI disclosure:</strong> This toolkit was built with the help of an AI assistant (Anthropic Claude); content reviewed and curated by Marc Watkins.</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ===== Modal ===== -->
+  <div id="modal" class="hidden" style="position:fixed;inset:0;background:rgba(5,8,22,.72);backdrop-filter:blur(6px);z-index:50;overflow:auto;padding:30px 16px">
+    <div class="card card-glow" style="max-width:680px;margin:0 auto" id="modalBody"></div>
+  </div>
+
+<script src="assets/config.js"></script>
+<script src="assets/cloud.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var A = window.AILit;
+  var cfg = A.store.getConfig();
+
+  function save() { A.store.saveConfig(cfg); render(); }
+  function meta() {
+    document.getElementById("hTitle").textContent = cfg.meta.title || "AI Literacy for Faculty";
+    document.getElementById("hSub").textContent = (cfg.meta.subtitle || "") + (cfg.meta.presenter ? "  ·  " + cfg.meta.presenter : "") + (cfg.meta.org ? "  ·  " + cfg.meta.org : "");
+  }
+
+  var modal = document.getElementById("modal"), modalBody = document.getElementById("modalBody");
+  function openModal(node) { modalBody.innerHTML = ""; modalBody.appendChild(node); modal.classList.remove("hidden"); }
+  function closeModal() { modal.classList.add("hidden"); }
+  modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+
+  /* ---------- activity list ---------- */
+  function render() {
+    meta();
+    var list = document.getElementById("list");
+    list.innerHTML = "";
+    cfg.activities.forEach(function (a, idx) {
+      var t = A.TYPES[a.type];
+      var card = A.el("div", { class: "card" }, [
+        A.el("div", { class: "row between" }, [
+          A.el("span", { class: "badge", html: '<span style="font-size:1rem">' + t.icon + "</span> " + t.label }),
+          A.el("div", { class: "row" }, [
+            A.el("button", { class: "btn btn-sm btn-ghost", text: "↑", title: "Move up", onclick: function () { move(idx, -1); } }),
+            A.el("button", { class: "btn btn-sm btn-ghost", text: "↓", title: "Move down", onclick: function () { move(idx, 1); } })
+          ])
+        ]),
+        A.el("h2", { style: "font-size:1.2rem;margin:.5em 0 .2em", text: a.title }),
+        A.el("p", { class: "muted", style: "font-size:.88rem;min-height:2.4em", text: a.prompt || "" }),
+        A.el("div", { class: "row", style: "margin-top:8px" }, [
+          A.el("button", { class: "btn btn-sm btn-primary", text: "Edit", onclick: function () { editActivity(a); } }),
+          A.el("a", { class: "btn btn-sm", text: "Preview", href: "activity.html?id=" + a.id, target: "_blank", rel: "noopener" }),
+          A.el("button", { class: "btn btn-sm", text: "Embed", onclick: function () { embedDialog(a); } }),
+          A.el("button", { class: "btn btn-sm btn-danger btn-ghost", text: "Delete", onclick: function () { if (confirm("Delete “" + a.title + "”?")) { cfg.activities.splice(idx, 1); save(); } } })
+        ])
+      ]);
+      list.appendChild(card);
+    });
+  }
+  function move(i, d) { var j = i + d; if (j < 0 || j >= cfg.activities.length) return; var x = cfg.activities[i]; cfg.activities[i] = cfg.activities[j]; cfg.activities[j] = x; save(); }
+
+  /* ---------- add new ---------- */
+  document.getElementById("btnAdd").addEventListener("click", function () {
+    var grid = A.el("div", { class: "grid", style: "grid-template-columns:repeat(auto-fit,minmax(150px,1fr))" });
+    Object.keys(A.TYPES).forEach(function (key) {
+      var t = A.TYPES[key];
+      grid.appendChild(A.el("button", { class: "panel", style: "text-align:left;cursor:pointer;color:inherit", onclick: function () {
+        var a = { id: A.uid(key), type: key, title: t.label, prompt: "", config: t.defaultConfig() };
+        cfg.activities.push(a); save(); closeModal(); editActivity(a);
+      } }, [
+        A.el("div", { style: "font-size:1.5rem", html: t.icon }),
+        A.el("strong", { text: t.label }),
+        A.el("div", { class: "muted", style: "font-size:.82rem", text: t.blurb })
+      ]));
+    });
+    openModal(A.el("div", {}, [
+      A.el("div", { class: "eyebrow", text: "Choose a type" }),
+      A.el("h2", { text: "New activity" }),
+      grid,
+      A.el("button", { class: "btn btn-ghost", style: "margin-top:16px", text: "Cancel", onclick: closeModal })
+    ]));
+  });
+
+  /* ---------- edit ---------- */
+  function editActivity(a) {
+    var t = A.TYPES[a.type];
+    var common = A.el("div", {});
+    common.appendChild(field("Title", a.title, function (v) { a.title = v; }));
+    common.appendChild(field("Prompt / instructions", a.prompt, function (v) { a.prompt = v; }, true));
+    common.appendChild(field("Activity ID (used in the URL)", a.id, function (v) { a.id = v.replace(/[^a-z0-9\-]/gi, "-").toLowerCase(); }));
+
+    var specific = A.el("div", { class: "panel", style: "margin-top:10px" });
+    specific.appendChild(A.el("div", { class: "eyebrow", style: "margin-bottom:10px", text: t.label + " settings" }));
+    var specBody = A.el("div", {});
+    t.editor(specBody, a, function () {});
+    specific.appendChild(specBody);
+
+    openModal(A.el("div", {}, [
+      A.el("div", { class: "eyebrow", html: t.icon + " " + t.label }),
+      A.el("h2", { text: "Edit activity" }),
+      common, specific,
+      A.el("div", { class: "row between", style: "margin-top:18px" }, [
+        A.el("button", { class: "btn btn-ghost", text: "Cancel", onclick: function () { cfg = A.store.getConfig(); closeModal(); render(); } }),
+        A.el("button", { class: "btn btn-primary", text: "Save activity", onclick: function () { save(); closeModal(); } })
+      ])
+    ]));
+  }
+  function field(label, val, on, area) {
+    var inp = area ? A.el("textarea", {}) : A.el("input", { type: "text" });
+    inp.value = val == null ? "" : val;
+    inp.addEventListener("input", function () { on(inp.value); });
+    return A.el("label", { class: "field" }, [A.el("span", { text: label }), inp]);
+  }
+
+  /* ---------- embed dialog ---------- */
+  function embedDialog(a) {
+    var base = location.href.replace(/index\.html.*$/, "").replace(/[^\/]*$/, "");
+    var sess = getSess();
+    var sp = sess ? "&session=" + encodeURIComponent(sess) : "";
+    var url = base + "activity.html?id=" + a.id + sp;
+    var iframe = '<iframe src="' + url + '" width="100%" height="540" style="border:0;border-radius:16px" loading="lazy" allow="clipboard-write"></iframe>';
+    function copyRow(label, value) {
+      var ta = A.el("textarea", { readonly: "", style: "min-height:62px;font-family:monospace;font-size:.82rem" });
+      ta.value = value;
+      return A.el("div", { class: "field" }, [
+        A.el("span", { text: label }), ta,
+        A.el("button", { class: "btn btn-sm", style: "margin-top:6px", text: "Copy", onclick: function (e) { ta.select(); document.execCommand("copy"); e.target.textContent = "Copied ✓"; setTimeout(function () { e.target.textContent = "Copy"; }, 1500); } })
+      ]);
+    }
+    openModal(A.el("div", {}, [
+      A.el("div", { class: "eyebrow", text: "Embed & share" }),
+      A.el("h2", { text: a.title }),
+      A.el("p", { class: "muted", style: "font-size:.88rem", html: "Publish this folder to the web (your GitHub Pages site) so these links resolve for attendees. Until then the links use the current location." }),
+      sess
+        ? A.el("div", { class: "badge", style: "margin-bottom:12px;border-color:var(--c-teal);color:var(--c-cyan)", html: '<span style="width:7px;height:7px;border-radius:50%;background:var(--c-teal);display:inline-block"></span> Live session “' + A.esc(sess) + '” — responses feed the results view.' })
+        : A.el("div", { class: "muted", style: "font-size:.82rem;margin-bottom:12px", text: "No live session set — responses stay on each attendee's device. Set a session code above to collect live results." }),
+      copyRow("Direct link (open or QR it)", url),
+      copyRow("Iframe embed snippet", iframe),
+      A.el("a", { class: "btn btn-sm", href: "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(url), target: "_blank", rel: "noopener", text: "Open a QR code for this link" }),
+      A.el("div", { class: "row", style: "margin-top:16px" }, [A.el("button", { class: "btn btn-ghost", text: "Close", onclick: closeModal })])
+    ]));
+  }
+
+  /* ---------- workshop details ---------- */
+  document.getElementById("btnSettings").addEventListener("click", function () {
+    var m = cfg.meta;
+    openModal(A.el("div", {}, [
+      A.el("div", { class: "eyebrow", text: "Workshop details" }),
+      A.el("h2", { text: "Edit header" }),
+      field("Title", m.title, function (v) { m.title = v; }),
+      field("Subtitle", m.subtitle, function (v) { m.subtitle = v; }),
+      field("Presenter", m.presenter, function (v) { m.presenter = v; }),
+      field("Organization", m.org, function (v) { m.org = v; }),
+      A.el("div", { class: "row between", style: "margin-top:16px" }, [
+        A.el("button", { class: "btn btn-ghost", text: "Cancel", onclick: function () { cfg = A.store.getConfig(); closeModal(); render(); } }),
+        A.el("button", { class: "btn btn-primary", text: "Save", onclick: function () { save(); closeModal(); } })
+      ])
+    ]));
+  });
+
+  /* ---------- config import/export ---------- */
+  document.getElementById("btnExport").addEventListener("click", function () {
+    dl("config.json", JSON.stringify(cfg, null, 2), "application/json");
+  });
+  document.getElementById("btnExportJs").addEventListener("click", function () {
+    dl("config.js", "window.DEFAULT_CONFIG = " + JSON.stringify(cfg, null, 2) + ";\n", "text/javascript");
+  });
+  document.getElementById("fileImport").addEventListener("change", function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var txt = String(r.result).replace(/^[\s\S]*?DEFAULT_CONFIG\s*=\s*/, "").replace(/;\s*$/, "");
+        var parsed = JSON.parse(txt);
+        if (!parsed.activities) throw new Error("missing activities");
+        cfg = parsed; save(); alert("Configuration imported.");
+      } catch (err) { alert("Could not read that file: " + err.message); }
+    };
+    r.readAsText(f);
+  });
+  document.getElementById("btnReset").addEventListener("click", function () {
+    if (confirm("Reset all activities to the built-in defaults? Your edits in this browser will be lost.")) { A.store.resetConfig(); cfg = A.store.getConfig(); save(); }
+  });
+
+  function dl(name, content, type) {
+    var blob = new Blob([content], { type: type }), u = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = u; a.download = name; a.click();
+    setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+  }
+
+  /* ---------- live session controls ---------- */
+  function getSess() { try { return (localStorage.getItem("ailit:session") || "").trim(); } catch (e) { return ""; } }
+  function setSess(v) {
+    v = (v || "").toUpperCase().replace(/[^A-Z0-9\-]/g, "");
+    try { localStorage.setItem("ailit:session", v); } catch (e) {}
+    sessInput.value = v; paintSess();
+  }
+  var sessInput = document.getElementById("sessCode");
+  var sessResults = document.getElementById("sessResults");
+  var sessStatus = document.getElementById("sessStatus");
+  function paintSess() {
+    var v = getSess();
+    if (v) { sessResults.href = "results.html?session=" + encodeURIComponent(v); sessResults.style.opacity = ""; sessResults.style.pointerEvents = ""; }
+    else { sessResults.removeAttribute("href"); sessResults.style.opacity = ".45"; sessResults.style.pointerEvents = "none"; }
+    if (!(window.AILitCloud && window.AILitCloud.enabled)) { sessStatus.textContent = "No backend configured"; sessStatus.style.borderColor = "var(--vermilion)"; sessStatus.style.color = "#b8311a"; }
+    else if (v) { sessStatus.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:var(--c-teal);display:inline-block"></span> Live: ' + A.esc(v); sessStatus.style.borderColor = "var(--c-teal)"; sessStatus.style.color = "var(--c-cyan)"; }
+    else { sessStatus.textContent = "Offline (per-attendee)"; sessStatus.style.borderColor = ""; sessStatus.style.color = ""; }
+  }
+  sessInput.value = getSess();
+  sessInput.addEventListener("input", function () { setSess(sessInput.value); });
+  document.getElementById("sessNew").addEventListener("click", function () {
+    var c = "", ch = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    for (var i = 0; i < 5; i++) c += ch[Math.floor(Math.random() * ch.length)];
+    setSess(c);
+  });
+  document.getElementById("sessClear").addEventListener("click", function () { setSess(""); });
+  paintSess();
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Responses — AI Literacy for Faculty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
+</head>
+<body class="fx">
+  <div class="wrap" style="padding-top:40px">
+    <div class="row between no-print" style="margin-bottom:18px">
+      <a class="btn btn-sm btn-ghost" href="index.html">← Toolkit hub</a>
+      <div class="row">
+        <button class="btn btn-sm" id="btnHtml">⬇ Save as HTML</button>
+        <button class="btn btn-sm" id="btnPdf">⬇ Download PDF</button>
+        <button class="btn btn-sm btn-primary" id="btnPrint">🖨 Print</button>
+      </div>
+    </div>
+
+    <div id="doc">
+      <header style="margin-bottom:24px">
+        <div class="eyebrow">Workshop takeaways</div>
+        <h1>Your Responses</h1>
+        <p class="lead" id="sub"></p>
+      </header>
+      <div id="cards" class="grid"></div>
+      <div id="empty" class="card center hidden">
+        <h2 class="gradient-text">Nothing recorded yet</h2>
+        <p class="lead">Complete the activities during the workshop and your responses will gather here.</p>
+        <a class="btn btn-primary" href="activity.html">Go to an activity</a>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="attribution">
+        <div>Created by <strong>Marc Watkins</strong> · AI Literacy for Faculty</div>
+        <div class="ai-disclosure">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z" fill="currentColor"/></svg>
+          <span><strong>AI disclosure:</strong> This toolkit was built with the help of an AI assistant (Anthropic Claude); content reviewed and curated by Marc Watkins.</span>
+        </div>
+      </div>
+    </footer>
+    <div class="no-print" style="margin:8px 0 40px;color:var(--text-faint);font-size:.8rem">
+      Your responses are stored only in this browser on your device. Clearing your browser data removes them.
+      <button class="btn btn-sm btn-danger btn-ghost" id="btnClear" style="margin-left:10px">Clear my responses</button>
+    </div>
+  </div>
+
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var A = window.AILit;
+  var cfg = A.store.getConfig();
+  var responses = A.store.getResponses();
+  var cards = document.getElementById("cards");
+  var keys = Object.keys(responses);
+
+  document.getElementById("sub").textContent =
+    cfg.meta.title + " · " + new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+
+  if (!keys.length) {
+    document.getElementById("empty").classList.remove("hidden");
+  } else {
+    cfg.activities.forEach(function (a) {
+      var saved = responses[a.id];
+      if (!saved) return;
+      var t = A.TYPES[a.type];
+      var card = A.el("div", { class: "card" }, [
+        A.el("div", { class: "eyebrow", text: t.label }),
+        A.el("h2", { style: "font-size:1.25rem", text: a.title }),
+        a.prompt ? A.el("p", { class: "muted", style: "font-size:.9rem;margin-top:-4px", text: a.prompt }) : null
+      ]);
+      var body = A.el("div", { style: "margin-top:10px" });
+      try { body.appendChild(t.summarize(a, saved)); } catch (e) { body.textContent = JSON.stringify(saved.value); }
+      card.appendChild(body);
+      cards.appendChild(card);
+    });
+  }
+
+  // ---- Print (the reliable "save as PDF" route too) ----
+  document.getElementById("btnPrint").addEventListener("click", function () { window.print(); });
+
+  // ---- Save as self-contained HTML ----
+  document.getElementById("btnHtml").addEventListener("click", function () {
+    fetch("assets/theme.css").then(function (r) { return r.text(); }).catch(function () { return ""; }).then(function (themeCss) {
+      var doc = document.getElementById("doc").outerHTML;
+      var html = "<!DOCTYPE html><html><head><meta charset='utf-8'><title>My AI Literacy Responses</title>" +
+        "<style>" + themeCss + "body{padding:30px;max-width:1080px;margin:auto}</style></head>" +
+        "<body class='fx'>" + doc + "</body></html>";
+      download("my-ai-literacy-responses.html", html, "text/html");
+    });
+  });
+
+  // ---- Download PDF (jsPDF via CDN; falls back to print) ----
+  document.getElementById("btnPdf").addEventListener("click", function () {
+    loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", function (ok) {
+      if (!ok || !window.jspdf) { alert("Couldn't load the PDF library (offline?). Using Print → Save as PDF instead."); window.print(); return; }
+      buildPdf();
+    });
+  });
+
+  function buildPdf() {
+    var jsPDF = window.jspdf.jsPDF;
+    var pdf = new jsPDF({ unit: "pt", format: "letter" });
+    var M = 54, y = M, W = pdf.internal.pageSize.getWidth(), maxW = W - M * 2;
+    function nl(h) { y += h; if (y > pdf.internal.pageSize.getHeight() - M) { pdf.addPage(); y = M; } }
+    function text(str, size, color, style) {
+      pdf.setFont("helvetica", style || "normal"); pdf.setFontSize(size); pdf.setTextColor(color || "#111");
+      var lines = pdf.splitTextToSize(str, maxW);
+      lines.forEach(function (ln) { pdf.text(ln, M, y); nl(size * 1.35); });
+    }
+    pdf.setFillColor("#6c5ce7"); pdf.rect(0, 0, W, 8, "F");
+    text("Your Responses", 24, "#3a1d8a", "bold");
+    text(cfg.meta.title + "  ·  " + new Date().toLocaleDateString(), 11, "#666"); nl(8);
+    cfg.activities.forEach(function (a) {
+      var saved = responses[a.id]; if (!saved) return;
+      nl(6); text(a.title, 14, "#1a1a3a", "bold");
+      text(plain(a, saved), 11, "#222"); nl(6);
+    });
+    nl(10); text("Created by Marc Watkins · AI Literacy for Faculty", 9, "#888");
+    text("AI disclosure: built with an AI assistant (Anthropic Claude); curated by Marc Watkins.", 9, "#888", "italic");
+    pdf.save("my-ai-literacy-responses.pdf");
+  }
+
+  // plain-text rendering of a response for the PDF
+  function plain(a, saved) {
+    var v = saved.value;
+    switch (a.type) {
+      case "spectrum": return "Placed at " + v + " of " + a.config.max + " (" + a.config.leftLabel + " ↔ " + a.config.rightLabel + ")";
+      case "tally": return a.config.items.map(function (it, i) { return "• " + it.label + ": " + (v[i] || 0); }).join("\n");
+      case "sort": return a.config.categories.map(function (c) {
+        var items = a.config.items.filter(function (it) { return v[it] === c.id; });
+        return c.label + ": " + (items.join(", ") || "—"); }).join("\n");
+      case "poll": return (Array.isArray(v) ? v.join(", ") : v) || "—";
+      case "rating": return "Rated " + v + " of " + a.config.scale;
+      case "shorttext": return v || "—";
+      case "reflection": return a.config.prompts.map(function (p, i) { return p + "\n  " + ((v && v[i]) || "—"); }).join("\n");
+      case "wordcloud": return (v && v.length) ? v.join(", ") : "—";
+      case "ranking": return (v || []).map(function (o, i) { return (i + 1) + ". " + o; }).join("\n");
+      case "likert": return a.config.statements.map(function (s, i) { return "• " + s + ": " + (v && v[i] != null ? v[i] + "/" + a.config.scale : "—"); }).join("\n");
+      case "quiz": return "Your answer: " + (a.config.options[v] || "—") + (v === a.config.correct ? " (correct)" : " (incorrect; correct: " + a.config.options[a.config.correct] + ")");
+      case "dotvote": return a.config.options.map(function (o, i) { return "• " + o + ": " + ((v && v[i]) || 0); }).join("\n");
+      case "emoji": var o = a.config.options[v]; return o ? (o.emoji + " " + o.label) : "—";
+      default: return JSON.stringify(v);
+    }
+  }
+
+  document.getElementById("btnClear").addEventListener("click", function () {
+    if (confirm("Clear all your responses on this device? This cannot be undone.")) { A.store.clearResponses(); location.reload(); }
+  });
+
+  function download(name, content, type) {
+    var blob = new Blob([content], { type: type });
+    var u = URL.createObjectURL(blob);
+    var aTag = document.createElement("a"); aTag.href = u; aTag.download = name; aTag.click();
+    setTimeout(function () { URL.revokeObjectURL(u); }, 1000);
+  }
+  function loadScript(src, cb) {
+    var s = document.createElement("script"); s.src = src;
+    s.onload = function () { cb(true); }; s.onerror = function () { cb(false); };
+    document.head.appendChild(s);
+  }
+})();
+</script>
+</body>
+</html>

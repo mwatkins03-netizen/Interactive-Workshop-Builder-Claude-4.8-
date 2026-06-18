@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR Sheet — AI Literacy for Faculty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .qr-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .qr-card { break-inside: avoid; text-align: center; }
+  .qr-card img { width: 200px; height: 200px; image-rendering: pixelated; background: #fff; border: 2px solid var(--ink); border-radius: 12px; }
+  .qr-url { font-size: .68rem; word-break: break-all; color: var(--text-faint); margin-top: 6px; }
+  @media print {
+    .qr-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .qr-card img { width: 175px; height: 175px; }
+    .no-print { display: none !important; }
+    @page { margin: 12mm; }
+  }
+</style>
+</head>
+<body class="fx">
+  <div class="wrap" style="padding-top:34px">
+    <div class="row between no-print" style="margin-bottom:6px">
+      <a class="btn btn-sm btn-ghost" href="index.html">← Hub</a>
+      <button class="btn btn-sm btn-primary" id="btnPrint">🖨 Print this sheet</button>
+    </div>
+
+    <header style="margin-bottom:14px">
+      <div class="eyebrow">Scan to participate</div>
+      <h1 style="margin:.1em 0"><span class="gradient-text">QR Sheet</span></h1>
+      <p class="lead" id="sub" style="margin:.2em 0"></p>
+    </header>
+
+    <div class="card no-print" style="margin-bottom:22px">
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+        <label class="field" style="margin:0">
+          <span>Base URL (where this is hosted)</span>
+          <input type="text" id="baseUrl" placeholder="https://you.github.io/repo/">
+        </label>
+        <label class="field" style="margin:0">
+          <span>Session code (optional — for live results)</span>
+          <input type="text" id="sessCode" placeholder="blank = offline" style="text-transform:uppercase">
+        </label>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="optSummary" checked> <span>Include “My summary” card</span></label>
+        <label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="optResults"> <span>Include presenter “Live results” card</span></label>
+      </div>
+      <p class="muted" style="font-size:.82rem;margin:10px 0 0">
+        QR images are generated from the URLs below. Tip: print this from your office before the
+        workshop. You can also right-click any code to save it as a PNG. (Codes encode whatever base
+        URL is set above — make sure it's your live site, not <code>localhost</code>, before printing.)
+      </p>
+    </div>
+
+    <div id="grid" class="qr-grid"></div>
+
+    <footer class="site-footer">
+      <div class="attribution">
+        <div>Created by <strong>Marc Watkins</strong> · AI Literacy for Faculty</div>
+        <div class="ai-disclosure">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z" fill="currentColor"/></svg>
+          <span><strong>AI disclosure:</strong> Built with the help of an AI assistant (Anthropic Claude); curated by Marc Watkins.</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var A = window.AILit, el = A.el, esc = A.esc;
+  var cfg = A.store.getConfig();
+  var grid = document.getElementById("grid");
+  var baseInput = document.getElementById("baseUrl");
+  var sessInput = document.getElementById("sessCode");
+  var optSummary = document.getElementById("optSummary");
+  var optResults = document.getElementById("optResults");
+
+  function detectedBase() { return location.href.replace(/qr\.html.*$/, "").replace(/[^\/]*$/, ""); }
+  function getSess() { try { return (localStorage.getItem("ailit:session") || "").trim(); } catch (e) { return ""; } }
+
+  baseInput.value = detectedBase();
+  sessInput.value = getSess();
+
+  function qrImg(url) {
+    var src = "https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=12&data=" + encodeURIComponent(url);
+    return el("img", { src: src, alt: "QR code", loading: "lazy" });
+  }
+  function card(label, sub, url) {
+    return el("div", { class: "qr-card card" }, [
+      el("div", { class: "eyebrow", style: "justify-content:center;margin-bottom:8px", text: sub }),
+      el("div", { style: "font-weight:800;font-size:1.05rem;margin-bottom:10px", text: label }),
+      qrImg(url),
+      el("div", { class: "qr-url", text: url })
+    ]);
+  }
+
+  function render() {
+    var base = baseInput.value.trim() || detectedBase();
+    if (base.slice(-1) !== "/") base += "/";
+    var code = (sessInput.value || "").toUpperCase().replace(/[^A-Z0-9\-]/g, "");
+    var sp = code ? "&session=" + encodeURIComponent(code) : "";
+    document.getElementById("sub").textContent = cfg.meta.title + (code ? "  ·  session " + code : "  ·  offline (per-attendee)");
+
+    grid.innerHTML = "";
+    cfg.activities.forEach(function (a) {
+      grid.appendChild(card(a.title, A.TYPES[a.type].label, base + "activity.html?id=" + a.id + sp));
+    });
+    if (optSummary.checked) grid.appendChild(card("My Summary", "End of session", base + "summary.html"));
+    if (optResults.checked && code) grid.appendChild(card("Live Results", "Presenter / projector", base + "results.html?session=" + encodeURIComponent(code)));
+  }
+
+  baseInput.addEventListener("input", render);
+  sessInput.addEventListener("input", render);
+  optSummary.addEventListener("change", render);
+  optResults.addEventListener("change", render);
+  document.getElementById("btnPrint").addEventListener("click", function () { window.print(); });
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Results — AI Literacy for Faculty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/theme.css">
+</head>
+<body class="fx">
+  <div class="wrap" style="padding-top:34px">
+    <div class="row between" style="margin-bottom:18px">
+      <div>
+        <div class="eyebrow" id="liveTag">● Live results</div>
+        <h1 style="margin:.1em 0"><span class="gradient-text">Live Results</span></h1>
+      </div>
+      <div class="row" style="align-items:center">
+        <span class="badge" id="codeBadge" style="font-size:1rem">—</span>
+        <span class="badge" id="peopleBadge">0 here</span>
+        <button class="btn btn-sm" id="btnRefresh">Refresh now</button>
+        <button class="btn btn-sm btn-ghost" id="btnPause">Pause</button>
+        <a class="btn btn-sm btn-ghost" href="index.html">Hub</a>
+      </div>
+    </div>
+    <div class="muted no-print" id="meta" style="font-size:.82rem;margin-bottom:18px"></div>
+
+    <div id="board" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(330px,1fr))"></div>
+
+    <div id="msg" class="card center hidden" style="margin-top:20px"></div>
+
+    <footer class="site-footer">
+      <div class="attribution">
+        <div>Created by <strong>Marc Watkins</strong> · AI Literacy for Faculty</div>
+        <div class="ai-disclosure">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z" fill="currentColor"/></svg>
+          <span><strong>AI disclosure:</strong> Built with the help of an AI assistant (Anthropic Claude); curated by Marc Watkins.</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+<script src="assets/config.js"></script>
+<script src="assets/cloud.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var A = window.AILit, el = A.el, esc = A.esc;
+  var cfg = A.store.getConfig();
+  var params = new URLSearchParams(location.search);
+  var session = (params.get("session") || "").trim().toUpperCase();
+  var board = document.getElementById("board");
+  var msg = document.getElementById("msg");
+  document.getElementById("codeBadge").textContent = session ? ("Code: " + session) : "No code";
+
+  if (!session) { showMsg("Add a session code to the URL", "Open this page as <code>results.html?session=YOURCODE</code>, or set a session code on the <a href='index.html'>hub</a> and click “Open live results”."); return; }
+  if (!(window.AILitCloud && window.AILitCloud.enabled)) { showMsg("Backend not configured", "The live-results backend isn't set up in <code>assets/cloud.js</code>, so responses can't be collected centrally."); return; }
+
+  function showMsg(title, html) { msg.classList.remove("hidden"); msg.innerHTML = '<h2 class="gradient-text">' + esc(title) + '</h2><p class="lead">' + html + '</p>'; }
+
+  /* ---------- small render helpers ---------- */
+  function bar(label, count, max, color) {
+    var pct = max > 0 ? Math.round(count / max * 100) : 0;
+    return el("div", { style: "margin:7px 0" }, [
+      el("div", { class: "row between", style: "font-size:.92rem;margin-bottom:3px" }, [el("span", { text: label }), el("strong", { text: String(count) })]),
+      el("div", { style: "height:14px;border:2px solid var(--ink);border-radius:999px;background:var(--bg-2);overflow:hidden" }, [
+        el("div", { style: "height:100%;width:" + pct + "%;background:" + (color || "var(--grad-brand)") })
+      ])
+    ]);
+  }
+  function big(text, sub) {
+    return el("div", { class: "center", style: "margin:6px 0" }, [
+      el("div", { class: "gradient-text", style: "font-family:var(--font-display);font-size:2.6rem;line-height:1", text: text }),
+      sub ? el("div", { class: "muted", style: "font-size:.85rem", text: sub }) : null
+    ]);
+  }
+  function waiting() { return el("div", { class: "muted center", style: "padding:14px 0", text: "Waiting for responses…" }); }
+
+  /* ---------- per-type aggregators ---------- */
+  var AGG = {
+    poll: function (a, vals) {
+      var opts = a.config.options, c = opts.map(function () { return 0; });
+      vals.forEach(function (v) { (Array.isArray(v) ? v : [v]).forEach(function (o) { var i = opts.indexOf(o); if (i > -1) c[i]++; }); });
+      var max = Math.max.apply(null, c.concat([1]));
+      return el("div", {}, opts.map(function (o, i) { return bar(o, c[i], max); }));
+    },
+    quiz: function (a, vals) {
+      var opts = a.config.options, c = opts.map(function () { return 0; });
+      vals.forEach(function (v) { if (typeof v === "number" && opts[v] != null) c[v]++; });
+      var max = Math.max.apply(null, c.concat([1]));
+      var correctN = c[a.config.correct] || 0, total = vals.length;
+      return el("div", {}, [
+        big(total ? Math.round(correctN / total * 100) + "%" : "—", "answered correctly (" + correctN + "/" + total + ")"),
+        el("div", {}, opts.map(function (o, i) {
+          return bar((i === a.config.correct ? "✓ " : "") + o, c[i], max, i === a.config.correct ? "var(--c-teal)" : "var(--grad-brand)");
+        }))
+      ]);
+    },
+    emoji: function (a, vals) {
+      var opts = a.config.options, c = opts.map(function () { return 0; });
+      vals.forEach(function (v) { if (typeof v === "number" && opts[v]) c[v]++; });
+      var max = Math.max.apply(null, c.concat([1]));
+      return el("div", {}, opts.map(function (o, i) { return bar(o.emoji + "  " + o.label, c[i], max); }));
+    },
+    rating: function (a, vals) {
+      var n = a.config.scale, c = []; for (var k = 0; k <= n; k++) c[k] = 0;
+      var sum = 0, cnt = 0;
+      vals.forEach(function (v) { if (typeof v === "number") { c[v] = (c[v] || 0) + 1; sum += v; cnt++; } });
+      var max = Math.max.apply(null, c.slice(1).concat([1]));
+      var rows = []; for (var r = 1; r <= n; r++) rows.push(bar(String(r), c[r] || 0, max));
+      return el("div", {}, [big(cnt ? (sum / cnt).toFixed(1) : "—", "average of " + n + " (" + cnt + " responses)"), el("div", {}, rows)]);
+    },
+    spectrum: function (a, vals) {
+      var nums = vals.filter(function (v) { return typeof v === "number"; });
+      var avg = nums.length ? nums.reduce(function (s, v) { return s + v; }, 0) / nums.length : null;
+      var pct = avg == null ? 0 : (avg - a.config.min) / (a.config.max - a.config.min) * 100;
+      var track = el("div", { style: "position:relative;height:14px;border:2px solid var(--ink);border-radius:999px;background:var(--bg-2);margin:10px 0" });
+      nums.forEach(function (v) { var p = (v - a.config.min) / (a.config.max - a.config.min) * 100; track.appendChild(el("div", { style: "position:absolute;top:1px;left:" + p + "%;width:6px;height:6px;border-radius:50%;background:rgba(20,18,16,.35);transform:translateX(-50%)" })); });
+      if (avg != null) track.appendChild(el("div", { style: "position:absolute;top:-5px;left:" + pct + "%;width:18px;height:18px;border-radius:50%;border:2px solid var(--ink);background:var(--grad-brand);transform:translateX(-50%)" }));
+      return el("div", {}, [
+        big(avg == null ? "—" : avg.toFixed(0), "average (" + nums.length + " responses)"),
+        el("div", { class: "row between muted", style: "font-size:.82rem" }, [el("span", { text: a.config.leftLabel }), el("span", { text: a.config.rightLabel })]),
+        track
+      ]);
+    },
+    likert: function (a, vals) {
+      return el("div", { class: "stack" }, a.config.statements.map(function (s, si) {
+        var sum = 0, cnt = 0; vals.forEach(function (v) { if (v && typeof v[si] === "number") { sum += v[si]; cnt++; } });
+        var avg = cnt ? sum / cnt : null;
+        return el("div", {}, [bar(s + (avg != null ? "  (avg of " + cnt + ")" : ""), avg != null ? Number(avg.toFixed(1)) : 0, a.config.scale, "var(--grad-cyan)")]);
+      }));
+    },
+    dotvote: function (a, vals) {
+      var opts = a.config.options, c = opts.map(function () { return 0; }), total = 0;
+      vals.forEach(function (v) { opts.forEach(function (_, i) { var n = (v && v[i]) || 0; c[i] += n; total += n; }); });
+      var max = Math.max.apply(null, c.concat([1]));
+      return el("div", {}, [el("div", { class: "muted center", style: "font-size:.82rem", text: total + " dots placed" })].concat(opts.map(function (o, i) { return bar(o, c[i], max, "var(--c-amber)"); })));
+    },
+    sort: function (a, vals) {
+      var cats = a.config.categories;
+      return el("div", { class: "stack" }, a.config.items.map(function (item) {
+        var counts = {}; cats.forEach(function (c) { counts[c.id] = 0; });
+        var tot = 0;
+        vals.forEach(function (v) { var cid = v && v[item]; if (cid && counts.hasOwnProperty(cid)) { counts[cid]++; tot++; } });
+        var top = null, topN = 0; cats.forEach(function (c) { if (counts[c.id] > topN) { topN = counts[c.id]; top = c; } });
+        return el("div", { class: "row between", style: "font-size:.9rem" }, [
+          el("span", { text: item }),
+          top ? el("span", { class: "badge", style: "border-color:" + top.color + ";color:" + top.color, text: top.label + " " + topN + "/" + tot }) : el("span", { class: "muted", text: "—" })
+        ]);
+      }));
+    },
+    ranking: function (a, vals) {
+      var opts = a.config.options, agg = opts.map(function (o) { return { o: o, sum: 0, n: 0 }; });
+      vals.forEach(function (v) { if (Array.isArray(v)) v.forEach(function (o, pos) { var i = opts.indexOf(o); if (i > -1) { agg[i].sum += pos + 1; agg[i].n++; } }); });
+      agg.forEach(function (x) { x.avg = x.n ? x.sum / x.n : 99; });
+      agg.sort(function (x, y) { return x.avg - y.avg; });
+      return el("ol", { style: "margin:0;padding-left:22px" }, agg.map(function (x) {
+        return el("li", { style: "font-weight:700;margin:4px 0" }, [el("span", { text: x.o }), x.n ? el("span", { class: "muted", style: "font-weight:400", text: "  (avg rank " + x.avg.toFixed(1) + ")" }) : null]);
+      }));
+    },
+    wordcloud: function (a, vals) {
+      var freq = {}, disp = {};
+      vals.forEach(function (v) { (v || []).forEach(function (w) { var k = String(w).toLowerCase().trim(); if (!k) return; freq[k] = (freq[k] || 0) + 1; if (!disp[k]) disp[k] = w; }); });
+      var keys = Object.keys(freq).sort(function (x, y) { return freq[y] - freq[x]; });
+      if (!keys.length) return waiting();
+      var maxF = freq[keys[0]];
+      var colors = ["var(--vermilion)", "var(--c-teal)", "var(--c-magenta)", "var(--c-blue)", "var(--c-amber)", "var(--c-cyan)"];
+      return el("div", { class: "row", style: "gap:8px;align-items:baseline" }, keys.map(function (k, i) {
+        var size = (0.9 + (freq[k] / maxF) * 1.5).toFixed(2);
+        return el("span", { style: "font-weight:800;font-size:" + size + "rem;color:" + colors[i % colors.length], title: freq[k] + "×", text: disp[k] });
+      }));
+    },
+    shorttext: function (a, vals) {
+      var list = vals.filter(function (v) { return v && String(v).trim(); });
+      if (!list.length) return waiting();
+      return el("div", { style: "max-height:260px;overflow:auto" }, list.slice().reverse().map(function (v) {
+        return el("div", { class: "panel", style: "margin:6px 0;font-size:.92rem", text: v });
+      }));
+    },
+    reflection: function (a, vals) {
+      return el("div", { class: "stack" }, a.config.prompts.map(function (p, i) {
+        var answers = vals.map(function (v) { return v && v[i]; }).filter(function (t) { return t && String(t).trim(); });
+        return el("div", {}, [
+          el("div", { class: "eyebrow", style: "margin-bottom:4px", text: p + " · " + answers.length }),
+          el("div", { style: "max-height:160px;overflow:auto" }, answers.length ? answers.map(function (t) { return el("div", { class: "panel", style: "margin:4px 0;font-size:.88rem", text: t }); }) : [waiting()])
+        ]);
+      }));
+    },
+    tally: function (a, vals) {
+      var items = a.config.items, c = items.map(function () { return 0; });
+      vals.forEach(function (v) { items.forEach(function (_, i) { c[i] += (v && v[i]) || 0; }); });
+      var max = Math.max.apply(null, c.concat([1]));
+      return el("div", {}, items.map(function (it, i) { return bar(it.label, c[i], max, "var(--c-teal)"); }));
+    }
+  };
+
+  /* ---------- render loop ---------- */
+  var paused = false, lastRows = null;
+  function render(rows) {
+    lastRows = rows;
+    var byAct = {}, clients = {};
+    rows.forEach(function (r) { (byAct[r.activity_id] = byAct[r.activity_id] || []).push(r.value); clients[r.client_id] = 1; });
+    document.getElementById("peopleBadge").textContent = Object.keys(clients).length + " here";
+    board.innerHTML = "";
+    cfg.activities.forEach(function (a) {
+      var vals = byAct[a.id] || [];
+      var t = A.TYPES[a.type], agg = AGG[a.type];
+      var card = el("div", { class: "card" }, [
+        el("div", { class: "row between" }, [
+          el("span", { class: "badge", html: t.icon + " " + esc(t.label) }),
+          el("span", { class: "muted", style: "font-size:.8rem", text: vals.length + " resp." })
+        ]),
+        el("h2", { style: "font-size:1.2rem;margin:.4em 0 .2em", text: a.title })
+      ]);
+      var body = el("div", { style: "margin-top:6px" });
+      try { body.appendChild(vals.length ? agg(a, vals) : waiting()); } catch (e) { body.appendChild(el("div", { class: "muted", text: "—" })); }
+      card.appendChild(body);
+      board.appendChild(card);
+    });
+    var now = new Date();
+    document.getElementById("meta").textContent = "Auto-refreshing every 5s · last updated " + now.toLocaleTimeString();
+  }
+
+  function tick() {
+    if (paused) return;
+    window.AILitCloud.fetchSession(session).then(render);
+  }
+  document.getElementById("btnRefresh").addEventListener("click", function () { window.AILitCloud.fetchSession(session).then(render); });
+  document.getElementById("btnPause").addEventListener("click", function (e) {
+    paused = !paused; e.target.textContent = paused ? "Resume" : "Pause";
+    document.getElementById("liveTag").innerHTML = paused ? "❚❚ Paused" : "● Live results";
+    if (!paused) tick();
+  });
+
+  tick();
+  setInterval(tick, 5000);
+})();
+</script>
+</body>
+</html>
