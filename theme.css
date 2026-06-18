@@ -1,0 +1,210 @@
+/* ============================================================
+   AI Literacy Activities — "HERETIC" retro screen-print theme
+   Inspired by G.A.R.M. Co. pop-art posters: cream paper, bright
+   teal/green, vermilion red-orange, black, with magenta + gold
+   pops. Flat colors, bold black borders, hard "sticker" shadows,
+   chunky display type. Created for Marc Watkins.
+   ============================================================ */
+
+:root {
+  /* Paper / surfaces */
+  --bg-0: #f3e9bf;          /* cream paper (page) */
+  --bg-1: #fbf4d6;          /* card / panel */
+  --bg-2: #fffdf2;          /* input surface */
+  --bg-glass: #fbf4d6;      /* (kept name; now a solid card) */
+
+  /* Ink + lines */
+  --ink: #141210;
+  --stroke: #141210;
+  --stroke-strong: #141210;
+
+  /* Brand pops (names kept stable for existing inline styles) */
+  --vermilion: #f0451f;
+  --c-blue: #2d6fb0;
+  --c-indigo: #5a51c0;
+  --c-violet: #b5519b;      /* magenta-purple */
+  --c-magenta: #e24598;
+  --c-cyan: #0f8a7c;        /* deep teal (used for eyebrows on cream) */
+  --c-teal: #16a89a;        /* bright teal */
+  --c-amber: #e3a92c;       /* gold */
+
+  --grad-brand: linear-gradient(100deg, #f0451f 0%, #e24598 100%);
+  --grad-cyan: linear-gradient(100deg, #16a89a 0%, #2d6fb0 100%);
+  --grad-soft: linear-gradient(160deg, rgba(22,168,154,0.16), rgba(240,69,31,0.10));
+
+  /* Text */
+  --text: #141210;
+  --text-dim: #3c3a30;
+  --text-faint: #726c54;
+
+  /* Sizing */
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-sm: 9px;
+  --shadow-card: 4px 4px 0 rgba(20,18,16,0.92);
+  --shadow-glow: 5px 5px 0 var(--c-teal), 0 0 0 2px var(--ink);
+
+  --font: "Archivo", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Anton", "Archivo", system-ui, sans-serif;
+  --maxw: 1080px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+/* Ambient: warm paper + faint halftone dots + top accent band */
+body.fx { position: relative; }
+body.fx::before {
+  content: ""; position: fixed; inset: 0; z-index: -2;
+  background:
+    radial-gradient(1000px 500px at 100% -10%, rgba(22,168,154,0.16), transparent 60%),
+    radial-gradient(900px 600px at -5% 110%, rgba(240,69,31,0.10), transparent 55%),
+    var(--bg-0);
+}
+body.fx::after {
+  content: ""; position: fixed; inset: 0; z-index: -1;
+  background-image: radial-gradient(rgba(20,18,16,0.06) 1.1px, transparent 1.2px);
+  background-size: 11px 11px;
+  mask-image: radial-gradient(ellipse 95% 85% at 50% 25%, transparent 50%, #000 100%);
+}
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 22px; }
+
+/* ---------- Typography ---------- */
+h1, h2, h3 { line-height: 1.06; margin: 0 0 .4em; }
+h1 { font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 400; letter-spacing: .01em; text-transform: none; }
+h2 { font-size: clamp(1.4rem, 2.6vw, 2rem); font-weight: 800; letter-spacing: -0.01em; }
+h3 { font-weight: 800; }
+.gradient-text {
+  background: var(--grad-brand);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+}
+.eyebrow {
+  display: inline-flex; align-items: center; gap: .4em;
+  text-transform: uppercase; letter-spacing: .16em;
+  font-size: .72rem; font-weight: 800; color: var(--c-cyan);
+}
+.lead { color: var(--text-dim); font-size: 1.05rem; }
+.muted { color: var(--text-faint); }
+
+/* ---------- Buttons (sticker style) ---------- */
+.btn {
+  appearance: none; border: 2px solid var(--ink);
+  background: var(--bg-1); color: var(--ink);
+  border-radius: 999px; padding: .56em 1.15em;
+  font: inherit; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .5em;
+  box-shadow: 2px 2px 0 var(--ink);
+  transition: transform .08s ease, box-shadow .08s ease, background .15s ease;
+  text-decoration: none;
+}
+.btn:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--ink); }
+.btn:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--ink); }
+.btn-primary { background: var(--vermilion); color: #fff7e6; }
+.btn-ghost { background: transparent; box-shadow: none; }
+.btn-ghost:hover { background: rgba(20,18,16,0.06); box-shadow: none; transform: none; }
+.btn-sm { padding: .38em .8em; font-size: .85rem; }
+.btn-danger { background: var(--bg-1); border-color: var(--vermilion); color: #b8311a; }
+.btn-danger.btn-ghost { background: transparent; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; transform: none; box-shadow: 2px 2px 0 var(--ink); }
+
+/* ---------- Cards / panels ---------- */
+.card {
+  background: var(--bg-1);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 26px;
+}
+.card-glow { box-shadow: var(--shadow-glow); }
+.panel { background: var(--bg-2); border: 2px solid var(--ink); border-radius: var(--radius-md); padding: 16px; }
+
+/* ---------- Form controls ---------- */
+label.field { display: block; margin: 0 0 14px; }
+label.field > span { display: block; font-size: .82rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 700; }
+input[type="text"], input[type="number"], textarea, select {
+  width: 100%; background: var(--bg-2); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: var(--radius-sm);
+  padding: .58em .72em; font: inherit;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none; box-shadow: 3px 3px 0 var(--c-teal);
+}
+textarea { resize: vertical; min-height: 90px; }
+
+/* ---------- Badges / chips ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: .4em;
+  font-size: .72rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;
+  padding: .3em .7em; border-radius: 999px;
+  border: 2px solid var(--ink); color: var(--ink); background: var(--bg-1);
+}
+.chip {
+  display: inline-flex; align-items: center; gap: .45em;
+  padding: .5em .9em; border-radius: 999px;
+  background: var(--bg-1); border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: grab; user-select: none; font-weight: 700;
+  transition: transform .1s ease, box-shadow .1s ease;
+}
+.chip:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--ink); }
+.chip:active { cursor: grabbing; }
+.chip.dragging { opacity: .5; }
+
+/* ---------- AI disclosure + attribution footer ---------- */
+.site-footer {
+  margin-top: 48px; padding: 24px 0 40px;
+  border-top: 2px solid var(--ink);
+  color: var(--text-faint); font-size: .85rem;
+}
+.ai-disclosure {
+  display: inline-flex; align-items: center; gap: .55em;
+  background: rgba(22,168,154,0.14);
+  border: 2px solid var(--ink);
+  border-radius: 999px; padding: .45em 1em; color: var(--ink);
+  font-size: .82rem; line-height: 1.3;
+}
+.ai-disclosure svg { flex: 0 0 auto; color: var(--vermilion); }
+.attribution { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; justify-content: space-between; }
+
+/* ---------- Utility ---------- */
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.row.between { justify-content: space-between; }
+.grid { display: grid; gap: 18px; }
+.stack > * + * { margin-top: 14px; }
+.hidden { display: none !important; }
+.center { text-align: center; }
+hr.soft { border: none; border-top: 2px dashed rgba(20,18,16,0.3); margin: 22px 0; }
+code { background: rgba(20,18,16,0.08); padding: .08em .35em; border-radius: 5px; font-size: .9em; }
+a { color: var(--c-blue); }
+
+/* type-icon helper: scales with surrounding font-size */
+.tico { width: 1em; height: 1em; vertical-align: -0.135em; }
+
+/* ---------- Embed mode (single activity in an iframe) ---------- */
+body.embed { background: transparent; }
+body.embed.fx::before { opacity: .96; }
+body.embed.fx::after { opacity: .5; }
+body.embed .embed-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 18px; }
+body.embed .embed-shell .card { width: 100%; max-width: 760px; }
+
+/* ---------- Print (PDF route) ---------- */
+@media print {
+  body.fx::before, body.fx::after { display: none; }
+  body { background: #fff; color: #111; }
+  .no-print { display: none !important; }
+  .card, .panel { box-shadow: none; border: 1px solid #999; background: #fff; }
+  .gradient-text { color: #c23a1a !important; -webkit-text-fill-color: #c23a1a; }
+  .ai-disclosure { border: 1px solid #999; color: #333; background: #f4f4f4; }
+  .btn { box-shadow: none; }
+  a { color: #2a4dd0; }
+}
